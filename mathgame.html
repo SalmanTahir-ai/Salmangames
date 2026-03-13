@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Math Balloon Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            width: 100%;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* ===== TOP HEADER ===== */
+        .game-header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .score-display {
+            font-size: 18px;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 14px;
+            border-radius: 8px;
+        }
+
+        .level-display {
+            font-size: 16px;
+            background: rgba(255, 165, 0, 0.3);
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .header-right {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        /* ===== QUESTION AREA ===== */
+        .question-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .question-text {
+            font-size: 36px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .instruction {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 10px;
+        }
+
+        /* ===== ANSWER INPUT AREA ===== */
+        .answer-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            margin: 0 20px 20px 20px;
+        }
+
+        .answer-label {
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .answer-input {
+            width: 120px;
+            padding: 12px;
+            font-size: 24px;
+            text-align: center;
+            border: 3px solid white;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .submit-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .submit-btn:active {
+            background: #45a049;
+            transform: scale(0.95);
+        }
+
+        /* ===== BALLOON AREA ===== */
+        .balloon-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: transparent;
+        }
+
+        .balloon {
+            position: absolute;
+            width: 50px;
+            height: 60px;
+            border-radius: 50% 50% 50% 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .balloon:hover {
+            transform: scale(1.1);
+        }
+
+        .balloon.balloon-red {
+            background: linear-gradient(135deg, #FF6B6B, #FF5252);
+            transform: rotate(45deg);
+        }
+
+        .balloon.balloon-blue {
+            background: linear-gradient(135deg, #4ECDC4, #44A08D);
+            transform: rotate(-45deg);
+        }
+
+        .balloon.balloon-yellow {
+            background: linear-gradient(135deg, #FFD93D, #FFA500);
+            transform: rotate(45deg);
+        }
+
+        .balloon.balloon-pink {
+            background: linear-gradient(135deg, #FF69B4, #FF1493);
+            transform: rotate(-45deg);
+        }
+
+        .balloon.balloon-green {
+            background: linear-gradient(135deg, #51CF66, #2F9E44);
+            transform: rotate(45deg);
+        }
+
+        .balloon.popping {
+            animation: pop 0.5s ease-out;
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(1) rotate(0deg);
+            }
+            50% {
+                transform: scale(1.2) rotate(10deg);
+            }
+            100% {
+                transform: scale(0) rotate(20deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        /* ===== GAME OVER SCREEN ===== */
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .game-over.active {
+            display: flex;
+        }
+
+        .game-over-box {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-over-box h1 {
+            font-size: 32px;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .final-score {
+            font-size: 48px;
+            font-weight: bold;
+            color: #FF6B6B;
+            margin: 20px 0;
+        }
+
+        .final-level {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .restart-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 20px;
+        }
+
+        .restart-btn:active {
+            background: #5568d3;
+            transform: scale(0.95);
+        }
+
+        /* ===== FLOATING TEXT ===== */
+        .floating-text {
+            position: absolute;
+            font-size: 24px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: floatUp 1.5s ease-out forwards;
+        }
+
+        .floating-text.correct {
+            color: #4CAF50;
+        }
+
+        .floating-text.wrong {
+            color: #FF6B6B;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 480px) {
+            .question-text {
+                font-size: 32px;
+            }
+
+            .answer-input {
+                font-size: 20px;
+                width: 100px;
+                padding: 10px;
+            }
+
+            .balloon {
+                width: 45px;
+                height: 55px;
+                font-size: 24px;
+            }
+
+            .score-display {
+                font-size: 14px;
+            }
+
+            .header-right {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- HEADER -->
+        <div class="game-header">
+            <div class="header-left">
+                <div class="score-display">🎯 Score: <span id="score">0</span></div>
+                <div class="level-display">⚡ Level: <span id="level">1</span></div>
+            </div>
+            <div class="header-right" id="timer">60</div>
+        </div>
+
+        <!-- QUESTION AREA -->
+        <div class="question-area">
+            <div class="instruction">Answer the question to pop the balloons!</div>
+            <div class="question-text" id="question">2 + 3 = ?</div>
+        </div>
+
+        <!-- ANSWER INPUT -->
+        <div class="answer-area">
+            <div class="answer-label">Enter Answer:</div>
+            <input type="number" class="answer-input" id="answerInput" placeholder="?" onkeypress="handleKeyPress(event)">
+            <button class="submit-btn" onclick="submitAnswer()">✓ Submit</button>
+        </div>
+
+        <!-- BALLOON AREA -->
+        <div class="balloon-area" id="balloonArea"></div>
+    </div>
+
+    <!-- GAME OVER SCREEN -->
+    <div class="game-over" id="gameOverScreen">
+        <div class="game-over-box">
+            <h1>🎮 Game Over!</h1>
+            <div class="final-score" id="finalScore">0</div>
+            <div class="final-level" id="finalLevel">Level: 1</div>
+            <p>Great job! You popped lots of balloons!</p>
+            <button class="restart-btn" onclick="restartGame()">🔄 Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            score: 0,
+            level: 1,
+            timeLeft: 60,
+            balloons: [],
+            currentQuestion: null,
+            currentAnswer: null,
+            gameActive: true,
+            balloonSpeed: 2,
+            balloonFrequency: 1.5
+        };
+
+        const colors = ['balloon-red', 'balloon-blue', 'balloon-yellow', 'balloon-pink', 'balloon-green'];
+        let balloonCount = 0;
+
+        // Generate random question
+        function generateQuestion() {
+            const num1 = Math.floor(Math.random() * 20) + 1;
+            const num2 = Math.floor(Math.random() * 20) + 1;
+            const operations = ['+', '-', '*'];
+            const op = operations[Math.floor(Math.random() * operations.length)];
+            
+            let answer;
+            switch(op) {
+                case '+': answer = num1 + num2; break;
+                case '-': answer = num1 - num2; break;
+                case '*': answer = num1 * num2; break;
+            }
+
+            gameState.currentQuestion = `${num1} ${op} ${num2} = ?`;
+            gameState.currentAnswer = answer;
+            document.getElementById('question').textContent = gameState.currentQuestion;
+        }
+
+        // Create balloon
+        function createBalloon() {
+            if (!gameState.gameActive) return;
+
+            const balloonArea = document.getElementById('balloonArea');
+            const balloon = document.createElement('div');
+            balloon.className = `balloon ${colors[balloonCount % colors.length]}`;
+            balloon.textContent = '🎈';
+            balloon.id = `balloon-${balloonCount}`;
+
+            const randomLeft = Math.random() * (window.innerWidth - 60);
+            balloon.style.left = randomLeft + 'px';
+            balloon.style.top = '-70px';
+            balloon.style.animationDuration = (2 + Math.random() * 2) / gameState.balloonSpeed + 's';
+
+            balloonArea.appendChild(balloon);
+
+            const balloonObj = {
+                id: balloonCount,
+                element: balloon,
+                x: randomLeft,
+                y: -70
+            };
+
+            gameState.balloons.push(balloonObj);
+            balloonCount++;
+
+            // Remove balloon if it goes off screen
+            setTimeout(() => {
+                if (balloon.parentNode) {
+                    balloon.remove();
+                    gameState.balloons = gameState.balloons.filter(b => b.id !== balloonObj.id);
+                }
+            }, 5000 / gameState.balloonSpeed);
+        }
+
+        // Handle key press in input
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                submitAnswer();
+            }
+        }
+
+        // Submit answer
+        function submitAnswer() {
+            const input = document.getElementById('answerInput');
+            const userAnswer = parseInt(input.value);
+
+            if (isNaN(userAnswer)) {
+                return;
+            }
+
+            if (userAnswer === gameState.currentAnswer) {
+                // Correct answer
+                gameState.score += 10 * gameState.level;
+                showFloatingText('+' + (10 * gameState.level), 'correct');
+                
+                // Pop all balloons
+                gameState.balloons.forEach(balloon => {
+                    if (balloon.element.parentNode) {
+                        balloon.element.classList.add('popping');
+                        setTimeout(() => {
+                            if (balloon.element.parentNode) {
+                                balloon.element.remove();
+                            }
+                        }, 500);
+                    }
+                });
+                gameState.balloons = [];
+
+                // New question
+                input.value = '';
+                generateQuestion();
+            } else {
+                // Wrong answer
+                showFloatingText('❌', 'wrong');
+                input.value = '';
+            }
+
+            updateUI();
+            input.focus();
+        }
+
+        // Floating text animation
+        function showFloatingText(text, type) {
+            const floatingText = document.createElement('div');
+            floatingText.className = `floating-text ${type}`;
+            floatingText.textContent = text;
+            floatingText.style.left = '50%';
+            floatingText.style.top = '50%';
+            floatingText.style.transform = 'translate(-50%, -50%)';
+
+            document.querySelector('.question-area').appendChild(floatingText);
+
+            setTimeout(() => floatingText.remove(), 1500);
+        }
+
+        // Update UI
+        function updateUI() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('level').textContent = gameState.level;
+        }
+
+        // Game timer
+        function startTimer() {
+            const timerInterval = setInterval(() => {
+                gameState.timeLeft--;
+                document.getElementById('timer').textContent = gameState.timeLeft;
+
+                if (gameState.timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        // Balloon spawner
+        function startBalloonSpawner() {
+            const spawner = setInterval(() => {
+                if (gameState.gameActive) {
+                    createBalloon();
+
+                    // Increase difficulty
+                    if (gameState.timeLeft % 15 === 0 && gameState.timeLeft > 0) {
+                        gameState.level++;
+                        gameState.balloonSpeed += 0.3;
+                        gameState.balloonFrequency *= 0.9;
+                    }
+                } else {
+                    clearInterval(spawner);
+                }
+            }, gameState.balloonFrequency * 1000);
+        }
+
+        // End game
+        function endGame() {
+            gameState.gameActive = false;
+            document.getElementById('finalScore').textContent = gameState.score;
+            document.getElementById('finalLevel').textContent = `Level: ${gameState.level}`;
+            document.getElementById('gameOverScreen').classList.add('active');
+        }
+
+        // Restart game
+        function restartGame() {
+            gameState = {
+                score: 0,
+                level: 1,
+                timeLeft: 60,
+                balloons: [],
+                currentQuestion: null,
+                currentAnswer: null,
+                gameActive: true,
+                balloonSpeed: 2,
+                balloonFrequency: 1.5
+            };
+            balloonCount = 0;
+
+            document.getElementById('gameOverScreen').classList.remove('active');
+            document.getElementById('answerInput').value = '';
+            document.getElementById('balloonArea').innerHTML = '';
+            
+            updateUI();
+            generateQuestion();
+            startTimer();
+            startBalloonSpawner();
+            document.getElementById('answerInput').focus();
+        }
+
+        // Initialize game
+        window.addEventListener('load', () => {
+            generateQuestion();
+            startTimer();
+            startBalloonSpawner();
+            document.getElementById('answerInput').focus();
+        });
+    </script>
+</body>
+</html>
