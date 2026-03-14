@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Reaction Challenge</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+        .header { color: white; text-align: center; margin-bottom: 12px; }
+        .header h1 { font-size: 24px; margin-bottom: 5px; }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+        }
+        .game-box {
+            background: #f0f0f0;
+            border-radius: 8px;
+            padding: 40px;
+            margin-bottom: 15px;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .waiting { color: #999; font-size: 16px; font-weight: bold; }
+        .ready { background: #ffcccc; color: #c62828; font-size: 18px; font-weight: bold; }
+        .go { background: #000; color: #999; font-size: 20px; font-weight: bold; }
+        .success { background: #ccffcc; color: #2e7d32; font-size: 18px; font-weight: bold; }
+        .time { font-size: 32px; font-weight: bold; color: #667eea; }
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        button:active { transform: scale(0.95); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .stat {
+            background: #f0f0f0;
+            padding: 8px;
+            border-radius: 6px;
+        }
+        .stat-label { font-size: 10px; color: #666; }
+        .stat-value { font-size: 16px; font-weight: bold; color: #667eea; }
+        .level { font-size: 12px; color: #667eea; font-weight: bold; margin-bottom: 10px; }
+        .info { font-size: 11px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ Reaction Timing</h1>
+        <p style="color: white; font-size: 12px;">Click EXACTLY when it turns black!</p>
+    </div>
+    
+    <div class="container">
+        <div class="level" id="level">Level 1: Click at exactly 1 second</div>
+        
+        <div class="game-box" id="gameBox">
+            <div class="waiting" id="message">Waiting...</div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Score</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Level</div>
+                <div class="stat-value" id="levelNum">1</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Status</div>
+                <div class="stat-value" id="status">-</div>
+            </div>
+        </div>
+        
+        <button id="btn" onclick="startLevel()">START LEVEL</button>
+        <button onclick="reset()">RESET</button>
+        
+        <div class="info">⏱️ Perfect timing = advance level!</div>
+    </div>
+    
+    <script>
+        const gameBox = document.getElementById('gameBox');
+        const message = document.getElementById('message');
+        const btn = document.getElementById('btn');
+        const levelDisp = document.getElementById('level');
+        const levelNum = document.getElementById('levelNum');
+        
+        let currentLevel = 1;
+        let score = 0;
+        let testing = false;
+        let targetTime = 0;
+        let levelStartTime = 0;
+        let timeout = null;
+        
+        const levels = [
+            { time: 1000, text: 'Level 1: Click at exactly 1 second' },
+            { time: 2000, text: 'Level 2: Click at exactly 2 seconds' },
+            { time: 3000, text: 'Level 3: Click at exactly 3 seconds' },
+            { time: 4000, text: 'Level 4: Click at exactly 4 seconds' }
+        ];
+        
+        function startLevel() {
+            if (currentLevel > levels.length) {
+                alert('🎉 ALL LEVELS COMPLETE! You are a TIMING MASTER!');
+                currentLevel = 1;
+                score = 0;
+                updateDisplay();
+                return;
+            }
+            
+            testing = true;
+            btn.disabled = true;
+            
+            gameBox.innerHTML = '<div class="waiting">Get ready...</div>';
+            message.textContent = 'Get ready...';
+            gameBox.style.background = '#f0f0f0';
+            document.getElementById('status').textContent = '...';
+            
+            levelStartTime = Date.now();
+            targetTime = levels[currentLevel - 1].time;
+            
+            timeout = setTimeout(() => {
+                gameBox.style.background = '#000';
+                gameBox.innerHTML = '<div class="go">⚫ CLICK NOW!</div>';
+                message.textContent = 'CLICK EXACTLY NOW!';
+                gameBox.style.cursor = 'pointer';
+                gameBox.onclick = recordClick;
+            }, targetTime);
+        }
+        
+        function recordClick() {
+            if (!testing) return;
+            
+            const elapsedTime = Date.now() - levelStartTime;
+            const difference = Math.abs(elapsedTime - targetTime);
+            const tolerance = 300;
+            
+            testing = false;
+            gameBox.onclick = null;
+            gameBox.style.cursor = 'auto';
+            clearTimeout(timeout);
+            
+            if (elapsedTime < targetTime) {
+                gameBox.innerHTML = '<div class="ready">⏰ TOO EARLY!</div>';
+                message.textContent = `Clicked ${targetTime - elapsedTime}ms early - GAME OVER!`;
+                document.getElementById('status').textContent = '❌ Early';
+                btn.disabled = false;
+                gameBox.style.background = '#f0f0f0';
+            } else if (difference <= tolerance) {
+                score++;
+                gameBox.style.background = '#ccffcc';
+                gameBox.innerHTML = '<div class="success">✅ PERFECT!</div>';
+                message.textContent = `Perfect timing! ${difference}ms off`;
+                document.getElementById('status').textContent = '✅ Perfect';
+                document.getElementById('score').textContent = score;
+                
+                setTimeout(() => {
+                    currentLevel++;
+                    updateDisplay();
+                    btn.disabled = false;
+                    gameBox.style.background = '#f0f0f0';
+                }, 1500);
+            } else {
+                gameBox.innerHTML = '<div class="ready">⏰ TOO LATE!</div>';
+                message.textContent = `Clicked ${difference}ms late - GAME OVER!`;
+                document.getElementById('status').textContent = '❌ Late';
+                btn.disabled = false;
+                gameBox.style.background = '#f0f0f0';
+            }
+        }
+        
+        function updateDisplay() {
+            levelNum.textContent = currentLevel;
+            if (currentLevel <= levels.length) {
+                levelDisp.textContent = levels[currentLevel - 1].text;
+                btn.textContent = `START LEVEL ${currentLevel}`;
+            } else {
+                levelDisp.textContent = 'All levels complete!';
+                btn.textContent = 'RESTART';
+            }
+        }
+        
+        function reset() {
+            currentLevel = 1;
+            score = 0;
+            testing = false;
+            clearTimeout(timeout);
+            document.getElementById('score').textContent = '0';
+            document.getElementById('status').textContent = '-';
+            updateDisplay();
+            gameBox.innerHTML = '<div class="waiting">Ready?</div>';
+            gameBox.style.background = '#f0f0f0';
+            btn.disabled = false;
+        }
+        
+        updateDisplay();
+    </script>
+</body>
+</html>
